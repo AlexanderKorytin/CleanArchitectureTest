@@ -1,36 +1,38 @@
 package com.example.myapplication.presentation
 
-import android.app.Application
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.myapplication.data.impl.RepositoryImpl
-import com.example.myapplication.data.impl.SharedPrefStorage
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import com.example.myapplication.databinding.ActivityMainBinding
-import com.example.myapplication.domain.UseCase.GetUserNameUseCase
-import com.example.myapplication.domain.UseCase.SaveUserNameUseCase
-import com.example.myapplication.domain.models.UserParam
 
 class MainActivity : AppCompatActivity() {
     private lateinit var bindingMain: ActivityMainBinding
-
+    private lateinit var viewModel: MainViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
-        val storage =  SharedPrefStorage(context = applicationContext)
-        val repository = RepositoryImpl(storage)
-        val useCaseSave = SaveUserNameUseCase(repository)
-        val useCaseGet = GetUserNameUseCase(repository)
         super.onCreate(savedInstanceState)
+
+        viewModel = ViewModelProvider(this, MainViewModelFactory(this)).get(MainViewModel::class.java)
+
+        Log.e("EEE", "Activity create")
+        viewModel.resultSave.observe(this, Observer {
+            bindingMain.textGet.text = it
+        })
+
         bindingMain = ActivityMainBinding.inflate(layoutInflater)
         setContentView(bindingMain.root)
 
         bindingMain.buttonGet.setOnClickListener {
-            bindingMain.textGet.text = useCaseGet.execute().FirstName
+            viewModel.load()
         }
 
         bindingMain.buttonSave.setOnClickListener {
             hideKeyboard()
-            useCaseSave.execute(UserParam(bindingMain.textSave.text.toString()))
+            viewModel.save(bindingMain.textSave.text.toString())
         }
     }
 
